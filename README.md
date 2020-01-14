@@ -122,9 +122,9 @@ Para obter o hash, temos que seguir a seguinte ordem
 1) criamos um contexto, ```SHA256_CTX ctx```;
 2) criamos a string a ser convertida, ```BYTE text_um[] = {"abc"};```
 3) inicializamos o buf, ```BYTE buf[SHA256_BLOCK_SIZE]```;
-4) ```sha256_init(&ctx)```;
-5) ```sha256_update(&ctx, text_um, strlen(text_um));```
-6) ```sha256_final(&ctx, buf);```
+4) chamamos a função, ```sha256_init(&ctx)```;
+5) chamamos a função, ```sha256_update(&ctx, text_um, strlen(text_um));```
+6) chamamos a função, ```sha256_final(&ctx, buf);```
 7) opcional para visualizar o hash, ```printf("%02x ", buf[i]);```
 
 
@@ -177,13 +177,30 @@ Vale destacar o comentário do código:
 
 - dúvidas sobre litte endian e big endian: https://pt.wikipedia.org/wiki/Extremidade_(ordena%C3%A7%C3%A3o)
 
-Por fim, utilizando o código obtemos:
+Por fim, utilizando o código, obtemos:
 ```
 Hash resultante de abc: 
 c5 e6 81 84 d2 86 95 73 fe ba b8 88 fe 67 35 5a f2 6a 5f c0 59 a5 0f 8d 33 2e fe 10 5b d9 40 4a 
 ```
 
-### SHA 3
+### SHA 3 - Secure Hash Algorithm Version 3
+
+Utilizei a aula: SHA-3 Hash Function by Christof Paar, a qual foi de grande ajuda para entender melhor os conceitos de SHA3. 
+
+link: https://www.youtube.com/watch?v=JWskjzgiIa4
+
+Podendo ser chamada de Keccak, o SHA 3 é uma funcão unidirecional para gerar assinaturas digitais únicas para uma certa entrada. 
+O algoritmo funciona por meio de uma mistura de funções com compressão no tamanho selecionado - "cryptographic sponge".
+
+referência: https://en.bitcoinwiki.org/wiki/SHA-3
+
+Fases do SHA 3:
+- Absorção.
+- Compressão.
+
+Para entender melhor, utilizaremos o código do Andrey Jivsov. (crypto@brainhub.org)
+
+link: https://github.com/brainhub/SHA3IUF
 
 
 
