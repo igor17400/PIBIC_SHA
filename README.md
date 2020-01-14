@@ -5,7 +5,7 @@
 Elaboração de um projeto de pesquisa em conjunto com o professor Alexandre Solon Nery (alexandre.nery@redes.unb.br). <br/>
 O objetivo do projeto é atestar a eficiência de se utilizar FPGA para proteção de sistemas computacionais. 
 <br/>
-A primeira parte do projeto consiste em comparar algoritmos de hash do tipo SHA256 e SHA3, sendo processados no FPGA e demonstrar qual hash é mais seguro. E a segunda parte do projeto consiste em comprovar a eficiência da FPGA para segurança.
+A primeira parte do projeto consiste em entender algoritmos de hash do tipo SHA256 e SHA3, para concluir o porque do SHA3 ser o mais seguro. E a segunda parte do projeto consiste em comprovar a alta eficiência da FPGA para o processamento do SHA3.
 
 ## Motivação
 
@@ -128,7 +128,7 @@ Para obter o hash, temos que seguir a seguinte ordem
 7) opcional para visualizar o hash, ```printf("%02x ", buf[i]);```
 
 
-#### Começando pela função primeira função chamada, ```sha256_init```:
+#### Começando pela primeira função chamada, ```sha256_init```:
 
 A ideia da função é inicializar os valores ```datalen```, ```bitlen``` e  ```state[8]``` do nosso contexto.
 
@@ -201,6 +201,8 @@ Fases do SHA 3:
 Para entender melhor, utilizaremos o código do Andrey Jivsov. (crypto@brainhub.org)
 
 link: https://github.com/brainhub/SHA3IUF
+
+
 
 
 
