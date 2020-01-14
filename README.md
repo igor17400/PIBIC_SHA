@@ -42,7 +42,7 @@ O SHA256 faz parte da segunda versão dos SHAs regulada pela NIST (National Inst
 
 Para explicar o SHA256 vamos utilizar duas páginas, uma teórica e uma prática:
 
-- https://www.cs.rit.edu/~ark/lectures/onewayhash/onewayhash.shtml (teórica), Alan Kaminsky
+- https://www.cs.rit.edu/~ark/lectures/onewayhash/onewayhash.shtml (teórica / <mark>imagens</mark>), Alan Kaminsky
 - https://github.com/B-Con/crypto-algorithms (prática), Brad Conte (brad@bradconte.com)
 
 Quando alguma referência a código for feita, estaremos utilizando o excelente trabalho feito por Brad Conte.
@@ -90,7 +90,7 @@ Descrição geral do SHA256:                          |
  ---------------------------------------------------
  ```
 
-Temos no código as funções chamadas Little Functions, 
+Temos no código as funções chamadas Little Functions as quais serão utilizadas na função ```sha256_transform```
 
 ```
 /*--------------- THE LITTLE FUNCTIONS --------------
@@ -159,6 +159,31 @@ void sha256_init(SHA256_CTX *ctx){
 Como podemos ver no diagrama:
 ![](/images/SHA256Fig3.png)
 
+A nossa função ```sha256_update``` chama a função ```sha256_transform```(round function, no diagrama) a cada rodada. A qual altera a nossa variável ```ctx->state``` aplicando as funções - little functions - apresentadas acima. 
+
+
+#### Terceira função, ```sha256_final```:
+
+Vamos salvar na variável ```hash[]``` o resultado de todo o processamento, após mais algumas chamadas da função ```sha256_transform```.
+
+Vale destacar o comentário do código:
+
+```
+// Since this implementation uses little endian byte ordering and SHA uses big endian,
+// reverse all the bytes when copying the final state to the output hash.
+```
+
+É preciso reverter a ordem do hash final de little endian para big endian. 
+
+- dúvidas sobre litte endian e big endian: https://pt.wikipedia.org/wiki/Extremidade_(ordena%C3%A7%C3%A3o)
+
+Por fim, utilizando o código obtemos:
+```
+Hash resultante de abc: 
+c5 e6 81 84 d2 86 95 73 fe ba b8 88 fe 67 35 5a f2 6a 5f c0 59 a5 0f 8d 33 2e fe 10 5b d9 40 4a 
+```
+
+### SHA 3
 
 
 
