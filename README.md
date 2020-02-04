@@ -198,13 +198,145 @@ Fases do SHA 3:
 - Absorção.
 - Compressão.
 
-Para entender melhor, utilizaremos o código do Andrey Jivsov. (crypto@brainhub.org)
+Para conseguir desenvolver o projeto, utilizaremos o código do Andrey Jivsov. (crypto@brainhub.org)
 
 link: https://github.com/brainhub/SHA3IUF
 
+Podemos começar por uma ótima definição feita pelo artigo “Efficient FPGA Implementation of the SHA-3 Hash Function”, 
+
+“The sponge construction provides a generalized security proof and involves the iteration of an underlying sponge function along with the absorption of blocks, constituting a padded input message, and truncation of the output digest.” — “A construção da esponja fornece uma prova de segurança generalizada e envolve a iteração de uma função de esponja subjacente, juntamente com a absorção de blocos, constituindo uma ‘padded message’ e o truncamento do resumo da saída.”
+
+padded message - são bits adicionados para conseguirmos separar a mensagem em blocos de r-bits iguais 
+
+### Parâmetros do SHA3
+
+Ao olhar a imagem do explicação da Wikipédia sobre SHA3, https://upload.wikimedia.org/wikipedia/commons/7/70/SpongeConstruction.svg
+
+Pi - são as entradas 
+Zi - são as saídas do hash
+f - função permutação a qual opera em blocos de bits de tamanho b. 
+b - estado, state- para o SHA3, b = 5 x 5 x 64 = 1600 bits totais. b = r + c 
+c - capacidade, parâmetro de segurança —> 2^(c/2)
+r - taxa, parte da do estado que é lido e escrito 
+
+### Fase de absorção 
+
+É aplicado aos blocos de mensagens a operação XOR junto com os r-bits, como a imagem mostra. Assim esse resultado junto com os c-bits é fornecido como entrada para a função permutação. Em outras palavras, é aplicado uma porta XOR aos blocos de mensagens junto ao subconjunto do estado(b) e assim o resultado é aplicado a função f. É aplicado essa lógica em todos os bits da entrada. Assim, depois de que todos os bits forem absorvidos, entraremos na fase de compreensão. 
+
+#### Função de permutação - f
+
+É uma função que utiliza portas lógicas  XOR, AND e NOT para realizar as suas operações. A função possui 5 passos, os quais serão definidos como no artigo “Efficient FPGA Implementation of the SHA-3 Hash Function”:
+
+- Theta, provides diffusion on to two adjacent columns
+- Rho, permutates each lane internally by a rotation offset given by a 5x5 matrix r 
+- Pi, permutates the lanes with respect  to each other in the x and y positions, changing rows into columns
+- Chi, provides non-linearity, acting on each row
+- Iota,  XORs the center lane with round-specific constants.
+
+A definição da Wikipédia em inglês na seção “The block permutation”  vale a pena ser lida também —>  https://en.m.wikipedia.org/wiki/SHA-3
 
 
+### Fase de compressão 
 
+ Definição Wikipédia, “In the "squeeze" phase, output blocks are read from the same subset of the state, alternated with the state transformation function f” — “Na fase de compressão, os blocos de saída são lidos do mesmo subconjunto do estado, alternados com a função de permutação f“
+
+
+### Código 
+
+Depois de uma leve introdução de como o SHA3 funciona, podemos entender um pouco mais do código que utilizaremos como base. O objetivo dessa seção é indicar onde no código está cada função do algoritmo do SHA3 . 
+
+No arquivo sha3Test.c temos o recebimento dos bits de entrada a assim a aplicação das função do arquivo sha3.c para obtermos o hash de saída. 
+
+A começar pela função sha3_Init256, 
+
+```
+void
+sha3_Init256(void *priv)
+{
+    sha3_Init(priv, 256); /* para o PIBIC vamos utilizar essa funcão */
+}
+```
+
+Essa função tem como saída o bloco de 256 bits e por isso dentro de seu escopo é chamado a função sha3_Init(priv, 256) com o segundo parâmetro sendo 256. 
+
+```
+/* For Init or Reset call these: */
+sha3_return_t
+sha3_Init(void *priv, unsigned bitSize) {
+    sha3_context *ctx = (sha3_context *) priv;
+    if( bitSize != 256 && bitSize != 384 && bitSize != 512 )
+        return SHA3_RETURN_BAD_PARAMS;
+    memset(ctx, 0, sizeof(*ctx));
+    ctx->capacityWords = 2 * bitSize / (8 * sizeof(uint64_t));
+    return SHA3_RETURN_OK;
+}
+```
+
+A função sha3_Init, faz toda a parte do padding dos bits para que possamos aplicar as outras funções como foi explico na parte teórica. Assim, logo em seguida no arquivo sha3test.c é chamado 
+
+```
+sha3_SetFlags(&c, SHA3_FLAGS_KECCAK); 
+```
+
+Temos a definição de algumas constantes necessárias para a obtenção do hash. 
+
+e logo depois temos a função sha3_Update que vai ser a função que aplicará toda a lógica do algoritmo. 
+
+```
+sha3_Update(&c, "\xcc", 1);
+```
+
+Dentro dessa função temos o algoritmo que implementará todos os passos da imagem https://upload.wikimedia.org/wikipedia/commons/7/70/SpongeConstruction.svg
+Dentro dessa função temos outra função chamada keccakf, que será a responsável por chamar cada um dos steps em 24 loops como definido acima, na parte teórica. E em cada loop terá cada um dos steps, theta --> Rho --> Pi --> Chi --> iota, como mostrado abaixo. 
+
+```
+static void
+keccakf(uint64_t s[25])
+{
+    int i, j, round;
+    uint64_t t, bc[5];
+#define KECCAK_ROUNDS 24 /* quantidade de rodadas para cada função(round function), uma funcao inclui todas  os steps citados acima*/
+
+/*. The sponge function consists of 24 rounds where the state is processed and updated. */
+
+    for(round = 0; round < KECCAK_ROUNDS; round++) {
+
+        /* Theta */
+        for(i = 0; i < 5; i++)
+            bc[i] = s[i] ^ s[i + 5] ^ s[i + 10] ^ s[i + 15] ^ s[i + 20];
+
+        for(i = 0; i < 5; i++) {
+            t = bc[(i + 4) % 5] ^ SHA3_ROTL64(bc[(i + 1) % 5], 1);
+            for(j = 0; j < 25; j += 5)
+                s[j + i] ^= t;
+        }
+
+        /* Rho Pi */
+        t = s[1];
+        for(i = 0; i < 24; i++) {
+            j = keccakf_piln[i];
+            bc[0] = s[j];
+            s[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
+            t = bc[0];
+        }
+
+        /* Chi */
+        for(j = 0; j < 25; j += 5) {
+            for(i = 0; i < 5; i++)
+                bc[i] = s[j + i];
+            for(i = 0; i < 5; i++)
+                s[j + i] ^= (~bc[(i + 1) % 5]) & bc[(i + 2) % 5];
+        }
+
+        /* Iota */
+        s[0] ^= keccakf_rndc[round];
+    }
+}
+```
+
+## Aumentar a eficiência do SHA3 com FPGA
+
+Depois de ter entendido o porque escolher o SHA3 sobre as suas outras versões mais antigas e entender como o mesmo funciona, precisamos saber como deixá-lo mais eficiente. Visando esse objetivo, começamos a investigar como o FPGA pode nos ajudar nessa tarefa. 
 
 
 
