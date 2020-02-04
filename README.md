@@ -339,6 +339,15 @@ keccakf(uint64_t s[25])
 Depois de ter entendido o porque escolher o SHA3 sobre as suas outras versões mais antigas e entender como o mesmo funciona, precisamos saber como deixá-lo mais eficiente. Visando esse objetivo, começamos a investigar como o FPGA pode nos ajudar nessa tarefa. 
 
 
+<br/>
+
+Utilizaremos o artigo “Efficient FPGA Implementation of the SHA-3 Hash Function“ do autor Magnus Sundal and Ricardo Chaves para começar a entender como utilizando FPGA podemos aumentar a eficiência da função de hash do SHA3.
+Link para obtenção do artigo - http://www.inesc-id.pt/ficheiros/publicacoes/13121.pdf
+
+
+
+
+
 
 
 
